@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentenstroom – leerkracht</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .teacher { max-width: 1200px; margin: 0 auto; padding-block: 24px 60px; padding-inline: 16px; display: grid; gap: 18px; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+  .panel h2 { font-size: 1.15rem; }
+  .panel p { margin: 0; color: var(--ink-2); max-width: 75ch; }
+  .input-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  #codes { min-height: 110px; font: .78rem/1.4 ui-monospace, Consolas, monospace; }
+  .errors { color: var(--bad); font-size: .88rem; margin: 0; padding-left: 1.2em; }
+  .matrix tr.clickable { cursor: pointer; }
+  .matrix tr.clickable:hover td { background: var(--accent-soft); }
+  .matrix tr.active td { background: var(--accent-soft); }
+  .detail-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .attempts { display: grid; gap: 10px; }
+  .attempt { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: var(--surface-2); }
+  .attempt h3 { font-size: .98rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .attempt ul { margin: 6px 0 0; padding-left: 1.2em; font-size: .88rem; }
+  .attempt .none { color: var(--ok); font-size: .88rem; margin-top: 4px; }
+  .warnflag { color: var(--bad); font-weight: 700; }
+  .heat td.c { font-variant-numeric: tabular-nums; }
+  .sol { columns: 2 260px; margin: 0; padding-left: 1.3em; }
+  .muted { color: var(--ink-2); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <h1>Documentenstroom · leerkracht</h1>
+    <small>Resultaten van de leerlingen inlezen en bekijken</small>
+  </div>
+  <div class="spacer"></div>
+  <a class="btn small" href="index.html">Naar de leerlingenapp</a>
+</header>
+
+<main class="teacher">
+  <section class="panel">
+    <h2>Resultaten inlezen</h2>
+    <p>Plak de resultaatcodes van je leerlingen hieronder (één of meerdere, elk op een nieuwe regel), of kies de .txt-bestanden die ze downloadden. Alles blijft in deze browser; er wordt niets verstuurd.</p>
+    <label for="codes" class="muted">Resultaatcodes (beginnen met DS1.)</label>
+    <textarea id="codes" placeholder="DS1.eyJ2Ijox…"></textarea>
+    <div class="input-row">
+      <button class="btn primary" type="button" id="readBtn">Codes inlezen</button>
+      <label class="btn" for="files">Bestanden kiezen</label>
+      <input type="file" id="files" accept=".txt,text/plain" multiple hidden>
+      <button class="btn ghost" type="button" id="csvBtn" disabled>Download overzicht (CSV)</button>
+      <button class="btn ghost" type="button" id="clearBtn">Lijst wissen</button>
+    </div>
+    <ul class="errors" id="errors" hidden></ul>
+  </section>
+
+  <section class="panel" id="overviewPanel" hidden>
+    <h2>Klasoverzicht</h2>
+    <p>Klik op een leerling voor de details. De inschatting kijkt vooral naar de <b>eerste controle</b>: wie het kent, heeft het meteen (bijna) juist. Wie veel controles nodig heeft of juiste antwoorden weer omwisselt, heeft waarschijnlijk gegokt.</p>
+    <div class="matrix-wrap"><table class="matrix" id="overview"></table></div>
+    <div class="legend">
+      <span class="pill good">Kent het</span> ≥ 90 % juist bij 1e controle
+      <span class="pill ok">Grotendeels</span> ≥ 70 % en max. 4 controles
+      <span class="pill warn">Twijfelt</span>
+      <span class="pill bad">Waarschijnlijk gegokt</span> &lt; 50 % bij 1e controle, ≥ 6 controles of vaak juist → fout
+    </div>
+  </section>
+
+  <section class="panel" id="detailPanel" hidden></section>
+
+  <section class="panel" id="classPanel" hidden>
+    <h2>Wat kent de klas?</h2>
+    <p>Percentage leerlingen dat het onderdeel <b>bij de eerste controle</b> juist had.</p>
+    <div class="matrix-wrap"><table class="matrix heat" id="classTable"></table></div>
+  </section>
+
+  <section class="panel">
+    <details>
+      <summary><b>Oplossing</b></summary>
+      <ol class="sol" id="solution"></ol>
+      <p class="muted">Bij elk document horen de kaartjes naam, wat is het?, van wie? voor wie? en wat is de inhoud? uit de bundel “Logistiek en commerciële documenten”.</p>
+    </details>
+  </section>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="js/leerkracht.js"></script>
+</body>
+</html>
