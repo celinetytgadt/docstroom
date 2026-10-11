@@ -29,6 +29,9 @@
   .heat td.c { font-variant-numeric: tabular-nums; }
   .sol { columns: 2 260px; margin: 0; padding-left: 1.3em; }
   .muted { color: var(--ink-2); font-size: .85rem; }
+  .pw { font: inherit; padding: .5em .7em; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); width: 14em; max-width: 100%; }
+  #manualBox[open] > *:not(summary) { margin-top: 10px; }
+  .status-pill { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -42,19 +45,31 @@
 </header>
 
 <main class="teacher">
+  <section class="panel" id="livePanel">
+    <h2>Resultaten uit de Google Sheet</h2>
+    <p id="liveIntro">Geef je leerkrachtwachtwoord in (het wachtwoord dat in het script staat). De resultaten worden elke 30 seconden vernieuwd.</p>
+    <form class="input-row" id="loginForm">
+      <label for="pw" class="muted">Wachtwoord</label>
+      <input id="pw" type="password" autocomplete="current-password" class="pw">
+      <button class="btn primary" type="submit" id="loginBtn">Resultaten ophalen</button>
+      <button class="btn" type="button" id="refreshBtn" hidden>Vernieuwen</button>
+      <span class="muted" id="liveStatus"></span>
+    </form>
+    <p class="form-error" id="liveError" hidden></p>
+  </section>
+
   <section class="panel">
-    <h2>Resultaten inlezen</h2>
-    <p>Plak resultaatcodes hieronder (één of meerdere, elk op een nieuwe regel). Je vindt de code op het eindscherm van de leerling onder “Voor de leerkracht”. Alles blijft in deze browser; er wordt niets verstuurd.</p>
-    <label for="codes" class="muted">Resultaatcodes (beginnen met DS1.)</label>
-    <textarea id="codes" placeholder="DS1.eyJ2Ijox…"></textarea>
-    <div class="input-row">
-      <button class="btn primary" type="button" id="readBtn">Codes inlezen</button>
-      <label class="btn" for="files">Bestanden kiezen</label>
-      <input type="file" id="files" accept=".txt,text/plain" multiple hidden>
-      <button class="btn ghost" type="button" id="csvBtn" disabled>Download overzicht (CSV)</button>
-      <button class="btn ghost" type="button" id="clearBtn">Lijst wissen</button>
-    </div>
-    <ul class="errors" id="errors" hidden></ul>
+    <details id="manualBox">
+      <summary><b>Resultaatcodes handmatig inlezen</b></summary>
+      <p>Plak resultaatcodes hieronder (één of meerdere, elk op een nieuwe regel). Je vindt de code op het eindscherm van de leerling onder “Voor de leerkracht”.</p>
+      <textarea id="codes" placeholder="DS1.eyJ2Ijox…" aria-label="Resultaatcodes"></textarea>
+      <div class="input-row">
+        <button class="btn" type="button" id="readBtn">Codes inlezen</button>
+        <button class="btn ghost" type="button" id="clearBtn">Ingeplakte codes wissen</button>
+      </div>
+      <ul class="errors" id="errors" hidden></ul>
+    </details>
+    <div class="input-row"><button class="btn ghost" type="button" id="csvBtn" disabled>Download overzicht (CSV)</button></div>
   </section>
 
   <section class="panel" id="overviewPanel" hidden>
@@ -86,6 +101,7 @@
   </section>
 </main>
 
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/core.js"></script>
 <script src="js/leerkracht.js"></script>

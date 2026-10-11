@@ -14,9 +14,14 @@ Slepen en klikken werken allebei (ook op touchscreens). Bij **Controleer** kleur
 | Pagina | Voor wie | Wat |
 | --- | --- | --- |
 | `index.html` | leerlingen | de oefening; het eindscherm toont het overzicht en (onder *Voor de leerkracht*) de fouten per controle en een resultaatcode |
-| `leerkracht.html` | leerkracht | resultaatcodes inlezen → klasoverzicht, details per leerling, fouten per controle, wat de klas kent, CSV-export |
+| `leerkracht.html` | leerkracht | live resultaten uit de Google Sheet (of codes handmatig inlezen) → klasoverzicht, details per leerling, fouten per controle, wat de klas kent, CSV-export |
 
-Er is geen server of account nodig: alles draait in de browser. De voortgang wordt bewaard in de browser van het toestel (localStorage): verder werken kan later op **hetzelfde toestel in dezelfde browser**, niet in een privévenster of op een ander toestel.
+### Opslag
+
+- **Met Google Sheet** (aanbevolen): de leerling start met naam + zelfgekozen pincode van 4 cijfers. Het werk wordt automatisch in de spreadsheet bewaard (na wijzigingen en na elke controle). Verder werken kan op elk toestel met dezelfde naam en pincode. Jij ziet alles live op `leerkracht.html` (met wachtwoord). Installatie: [`apps-script/INSTALLATIE.md`](apps-script/INSTALLATIE.md).
+- **Zonder Google Sheet** (`scriptUrl` in `js/config.js` leeg): alles blijft in de browser van het toestel. Verder werken kan dan alleen op hetzelfde toestel in dezelfde browser.
+
+Een naam kan maar één keer gebruikt worden (met de pincode die de leerling eerst koos). Zo kan een leerling niet stiekem herbeginnen of het werk van een ander openen. Laten herbeginnen kan via *Leerling wissen* op de leerkrachtpagina.
 
 ## Hoe zie je of een leerling gokte?
 

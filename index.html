@@ -29,10 +29,17 @@
       <span id="resumeText"></span>
       <button type="button" class="btn primary" id="resumeBtn">Verder werken</button>
     </div>
-    <div class="field">
-      <label for="naam">Voor- en achternaam</label>
-      <input id="naam" name="naam" autocomplete="name" required>
+    <div class="fields">
+      <div class="field">
+        <label for="naam">Voor- en achternaam</label>
+        <input id="naam" name="naam" autocomplete="name" required>
+      </div>
+      <div class="field" id="pinField" hidden>
+        <label for="pin">Pincode (4 cijfers)</label>
+        <input id="pin" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off">
+      </div>
     </div>
+    <p id="pinHelp" class="muted" hidden>Kies zelf een pincode en onthoud ze. Met je naam en pincode kan je later verder werken, ook op een andere computer.</p>
     <p id="startError" class="form-error" hidden></p>
     <div><button class="btn primary" type="submit" id="startBtn">Start de oefening</button></div>
   </form>
@@ -50,6 +57,7 @@
       <span>Gelegd: <b id="placedCount">0/32</b></span>
       <div class="progress" aria-hidden="true"><span id="progressBar" style="width:0%"></span></div>
       <span>Controle: <b id="attemptCount">0</b></span>
+      <span id="syncStatus" class="sync" hidden></span>
     </div>
     <button class="btn ghost small" type="button" id="handInBtn" hidden>Inleveren</button>
     <button class="btn primary" type="button" id="checkBtn" disabled>Controleer</button>
@@ -116,6 +124,7 @@
 
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="js/config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/core.js"></script>
 <script src="js/app.js"></script>

@@ -304,6 +304,12 @@ body.dragging .dragging-src { opacity: .35; }
 .attempt ul { margin: 6px 0 0; padding-left: 1.2em; font-size: .86rem; }
 .attempt p { margin: 4px 0 0; color: var(--ok); }
 .muted { color: var(--ink-2); font-size: .85rem; margin: 0; }
+.sync { font-size: .82rem; padding: 2px 9px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); }
+.sync.ok { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
+.sync.busy { color: var(--ink-2); }
+.sync.err { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.fields { grid-template-columns: 2fr 1fr; }
+.fields.single { grid-template-columns: 1fr; }
 
 .matrix-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 table.matrix { border-collapse: collapse; width: 100%; font-size: .88rem; }

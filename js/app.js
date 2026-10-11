@@ -25,8 +25,71 @@
 
   /* ---------- opslag ---------- */
   function save() {
+    if (!S) return;
+    S.updated = Date.now();
     try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* geen opslag beschikbaar */ }
+    if (ONLINE && S.pin) { pending = true; scheduleSync(); }
   }
+
+  /* ---------- online opslag (Google Sheet via Apps Script) ---------- */
+  const URL_ = (window.DS_CONFIG && window.DS_CONFIG.scriptUrl || '').trim();
+  const ONLINE = !!URL_;
+  let pending = false;
+  let syncing = false;
+  let syncTimer = null;
+
+  function api(body) {
+    return fetch(URL_, { method: 'POST', body: JSON.stringify(body), redirect: 'follow' })
+      .then(r => r.json());
+  }
+  function summary() {
+    const sess = { naam: S.naam, klas: '', start: S.start, end: S.end, done: S.done && !S.handedIn, attempts: S.attempts, restarts: S.restarts || 0 };
+    const an = window.DS.analyse(sess);
+    return {
+      status: S.done ? (S.handedIn ? 'ingeleverd' : 'alles juist') : 'bezig',
+      n: an.n, first: an.n ? an.first : '', last: an.n ? an.last : '', total: TOTAL,
+      verdict: window.DS.verdict(an).label, flips: an.flips, start: S.start,
+      code: window.DS.encodeResult(sess)
+    };
+  }
+  function payload() {
+    return { action: 'save', naam: S.naam, pin: S.pin, state: S, summary: summary() };
+  }
+  function setSync(kind, text) {
+    const e = $('syncStatus');
+    if (!e) return;
+    e.hidden = !ONLINE;
+    e.className = `sync ${kind}`;
+    e.textContent = text;
+  }
+  function scheduleSync() {
+    clearTimeout(syncTimer);
+    setSync('busy', 'Niet opgeslagen…');
+    syncTimer = setTimeout(syncNow, 4000);
+  }
+  function syncNow() {
+    clearTimeout(syncTimer);
+    if (!ONLINE || !S || !S.pin || !pending) return Promise.resolve();
+    if (syncing) { syncTimer = setTimeout(syncNow, 1500); return Promise.resolve(); }
+    syncing = true;
+    pending = false;
+    setSync('busy', 'Opslaan…');
+    return api(payload()).then(res => {
+      syncing = false;
+      if (res && res.ok) setSync('ok', '✓ Opgeslagen');
+      else { setSync('err', '⚠ ' + ((res && res.error) || 'Niet opgeslagen')); }
+    }).catch(() => {
+      syncing = false;
+      pending = true;
+      setSync('err', '⚠ Geen verbinding, je werk staat op deze computer');
+    });
+  }
+  setInterval(() => { if (pending && !syncing) syncNow(); }, 20000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && pending && ONLINE && S && S.pin && navigator.sendBeacon) {
+      try { if (navigator.sendBeacon(URL_, JSON.stringify(payload()))) pending = false; } catch (e) { /* negeren */ }
+    }
+  });
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
   }
@@ -331,10 +394,12 @@
       S.done = true;
       S.end = Date.now();
       save();
+      syncNow();
       showResult();
       return;
     }
     save();
+    syncNow();
     const posWrong = IDS.filter(id => !ev.pos[id]).length;
     const cardWrong = TOTAL - DOCS.length - (ev.score - (DOCS.length - posWrong));
     showFeedback('bad', `
@@ -356,6 +421,7 @@
         S.handedIn = true;
         S.end = Date.now();
         save();
+        syncNow();
         showResult();
       });
   }
@@ -676,26 +742,58 @@
 
     $('startForm').addEventListener('submit', e => {
       e.preventDefault();
-      const naam = $('naam').value.trim();
-      if (!naam) {
-        $('startError').textContent = 'Vul je voor- en achternaam in.';
-        $('startError').hidden = false;
-        return;
-      }
+      const naam = $('naam').value.trim().replace(/\s+/g, ' ');
+      const pin = $('pin').value.trim();
+      const err = msg => { $('startError').textContent = msg; $('startError').hidden = false; };
+      if (!naam) return err('Vul je voor- en achternaam in.');
+      if (ONLINE && !/^\d{4}$/.test(pin)) return err('Kies een pincode van 4 cijfers.');
       $('startError').hidden = true;
       const old = load();
-      const go = () => {
-        archive(old);
-        S = newSession(naam);
+      const sameName = old && (old.naam || '').toLowerCase() === naam.toLowerCase();
+      const begin = state => {
+        if (old && !sameName) archive(old);
+        S = state || newSession(naam);
+        if (ONLINE) S.pin = pin;
         tab = 'naam';
         save();
-        startWork();
+        if (ONLINE) syncNow();
+        if (S.done) showResult(); else startWork();
       };
-      if (old && !old.done && old.attempts.length) {
-        confirmBox('Opnieuw beginnen?',
-          `Er is al een oefening bezig van ${old.naam} met ${old.attempts.length} controle(s). Wil je die wissen en opnieuw beginnen? Je leerkracht ziet dat er herbegonnen werd.`,
-          'Ja, opnieuw beginnen', go);
-      } else go();
+
+      if (!ONLINE) {
+        const go = () => { archive(old); S = newSession(naam); tab = 'naam'; save(); startWork(); };
+        if (old && !old.done && old.attempts.length) {
+          confirmBox('Opnieuw beginnen?',
+            `Er is al een oefening bezig van ${old.naam} met ${old.attempts.length} controle(s). Wil je die wissen en opnieuw beginnen? Je leerkracht ziet dat er herbegonnen werd.`,
+            'Ja, opnieuw beginnen', go);
+        } else go();
+        return;
+      }
+
+      const btn = $('startBtn');
+      btn.disabled = true;
+      btn.textContent = 'Even geduld…';
+      api({ action: 'start', naam, pin }).then(res => {
+        btn.disabled = false;
+        btn.textContent = 'Start de oefening';
+        if (!res || !res.ok) return err((res && res.error) || 'Er ging iets mis. Probeer opnieuw.');
+        if (res.status === 'resume' && res.state) {
+          // Nieuwste versie nemen: die van de sheet of die op deze computer
+          const local = sameName && old.pin === pin ? old : null;
+          const useLocal = local && (local.updated || 0) > (res.state.updated || 0);
+          begin(useLocal ? local : res.state);
+          if (!useLocal) pending = false;
+          toast('Welkom terug! Je kan verder werken.');
+        } else {
+          begin(null);
+        }
+      }).catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Start de oefening';
+        if (sameName && old.pin === pin) { begin(old); }
+        else { begin(null); }
+        setSync('err', '⚠ Geen verbinding, je werk staat op deze computer');
+      });
     });
     $('resumeBtn').addEventListener('click', () => {
       S = load();
@@ -715,6 +813,9 @@
       if (cb) cb();
     });
 
+    $('pinField').hidden = !ONLINE;
+    $('pinHelp').hidden = !ONLINE;
+    document.querySelector('#startForm .fields').classList.toggle('single', !ONLINE);
     const saved = load();
     if (saved && saved.done) { S = saved; showResult(); }
     else showStart();
