@@ -3,5 +3,7 @@
  * Leeg = de app bewaart alleen op het toestel van de leerling.
  */
 window.DS_CONFIG = {
-  scriptUrl: ''
+  scriptUrl: '',
+  // Link naar de taak in Google Classroom (getoond op het eindscherm)
+  classroomUrl: 'https://classroom.google.com/c/MjU0MDc0ODkyMTFa/a/MTYyNzYwNjk2NjU0/details'
 };

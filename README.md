@@ -9,6 +9,8 @@ Leerlingen krijgen 8 documenten van één bestelling (Urban Games ↔ Spel & Co)
 
 Slepen en klikken werken allebei (ook op touchscreens). Bij **Controleer** kleuren fouten rood, zodat de leerling opnieuw kan proberen. Elke controle wordt bijgehouden.
 
+Op het eindscherm staat een knop naar de taak in Google Classroom, zodat de leerling niet vergeet de taak als voltooid te markeren (link instelbaar in `js/config.js`, `classroomUrl`).
+
 ## Pagina's
 
 | Pagina | Voor wie | Wat |
@@ -18,7 +20,7 @@ Slepen en klikken werken allebei (ook op touchscreens). Bij **Controleer** kleur
 
 ### Opslag
 
-- **Met Google Sheet** (aanbevolen): de leerling start met naam + zelfgekozen pincode van 4 cijfers. Het werk wordt automatisch in de spreadsheet bewaard (na wijzigingen en na elke controle). Verder werken kan op elk toestel met dezelfde naam en pincode. Jij ziet alles live op `leerkracht.html` (met wachtwoord). Installatie: [`apps-script/INSTALLATIE.md`](apps-script/INSTALLATIE.md).
+- **Met Google Sheet** (aanbevolen, ideaal voor huiswerk): de leerling start met naam + zelfgekozen pincode van 4 cijfers. Het werk wordt automatisch in de spreadsheet bewaard (na wijzigingen en na elke controle). Verder werken kan op elk toestel met dezelfde naam en pincode. Jij ziet alles live op `leerkracht.html` (met wachtwoord). Installatie: [`apps-script/INSTALLATIE.md`](apps-script/INSTALLATIE.md).
 - **Zonder Google Sheet** (`scriptUrl` in `js/config.js` leeg): alles blijft in de browser van het toestel. Verder werken kan dan alleen op hetzelfde toestel in dezelfde browser.
 
 Een naam kan maar één keer gebruikt worden (met de pincode die de leerling eerst koos). Zo kan een leerling niet stiekem herbeginnen of het werk van een ander openen. Laten herbeginnen kan via *Leerling wissen* op de leerkrachtpagina.

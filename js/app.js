@@ -34,6 +34,7 @@
   /* ---------- online opslag (Google Sheet via Apps Script) ---------- */
   const URL_ = (window.DS_CONFIG && window.DS_CONFIG.scriptUrl || '').trim();
   const ONLINE = !!URL_;
+  const CLASSROOM = (window.DS_CONFIG && window.DS_CONFIG.classroomUrl || '').trim();
   let pending = false;
   let syncing = false;
   let syncTimer = null;
@@ -468,8 +469,12 @@
           <div class="kpi"><b>${an.last}/${TOTAL}</b><span>juist op het einde</span></div>
           <div class="kpi"><b>${fmtTime(S.end - S.start)}</b><span>gewerkt</span></div>
         </div>
-        <p>Laat dit scherm open staan. Je leerkracht komt je resultaat bekijken.</p>
       </div>
+      ${CLASSROOM ? `<div class="code-box classroom">
+        <h2>Laatste stap: dien je taak in</h2>
+        <p>Je resultaat is bewaard. Ga nu naar de taak in Google Classroom en klik op <b>Markeren als voltooid</b>. Pas dan weet je leerkracht dat je klaar bent.</p>
+        <div><a class="btn primary" href="${esc(CLASSROOM)}" target="_blank" rel="noopener">Open de taak in Classroom</a></div>
+      </div>` : ''}
       <h2>Jouw overzicht</h2>
       ${matrixHtml(an)}
       <details class="help teacher-box">

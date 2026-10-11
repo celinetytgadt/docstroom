@@ -75,6 +75,7 @@ button { font: inherit; color: inherit; }
   padding: .55em 1em; border-radius: 8px; border: 1px solid var(--line);
   background: var(--surface); cursor: pointer; font-weight: 700; white-space: nowrap;
 }
+a.btn { text-decoration: none; }
 .btn:hover { border-color: var(--ink-2); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 :root[data-theme="dark"] .btn.primary { color: #0b1020; }

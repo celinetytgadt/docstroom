@@ -182,7 +182,6 @@
     $('liveError').textContent = msg || '';
     $('liveError').hidden = !msg;
   }
-  let timer = null;
   function fetchServer() {
     if (!URL_ || !pw) return Promise.resolve();
     $('liveStatus').textContent = 'Ophalen…';
@@ -192,7 +191,6 @@
         build();
         $('liveStatus').textContent = '';
         $('refreshBtn').hidden = true;
-        clearInterval(timer);
         liveError(res.error || 'Ophalen mislukt.');
         return;
       }
@@ -202,8 +200,6 @@
       build();
       $('refreshBtn').hidden = false;
       $('liveStatus').textContent = `${server.length} leerling${server.length === 1 ? '' : 'en'} · bijgewerkt ${new Date().toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
-      clearInterval(timer);
-      timer = setInterval(() => { if (document.visibilityState === 'visible') fetchServer(); }, 30000);
     }).catch(() => {
       $('liveStatus').textContent = '';
       liveError('Geen verbinding met de Google Sheet. Klopt de scriptUrl in js/config.js?');
