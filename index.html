@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentenstroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Startscherm -->
+<section id="start" class="screen" hidden>
+  <form id="startForm" class="start-card" novalidate>
+    <h1>Documentenstroom</h1>
+    <p>Een bestelling van 25 koptelefoons tussen Urban Games (klant) en Spel &amp; Co (leverancier) liep door acht documenten. Jij zet ze terug in de juiste volgorde en legt bij elk document de juiste kaartjes.</p>
+    <div class="flow-strip" aria-hidden="true">
+      <span>document ?</span>→<span>document ?</span>→<span>document ?</span>→<span>…</span>→<span>document ?</span>
+    </div>
+    <ol class="steps-how">
+      <li>Leg de 8 documenten in de juiste volgorde.</li>
+      <li>Leg bij elk document 4 kaartjes: <b>naam</b>, <b>wat is het?</b>, <b>van wie? voor wie?</b> en <b>wat is de inhoud?</b></li>
+      <li>Klik op <b>Controleer</b>. Fouten kleuren rood: verbeter ze en controleer opnieuw.</li>
+    </ol>
+    <p>Elke controle wordt bijgehouden. Je leerkracht ziet dus hoeveel pogingen je nodig had. Denk goed na voor je controleert.</p>
+    <div id="resumeBox" class="resume" hidden>
+      <span id="resumeText"></span>
+      <button type="button" class="btn primary" id="resumeBtn">Verder werken</button>
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label for="naam">Voor- en achternaam</label>
+        <input id="naam" name="naam" autocomplete="name" required>
+      </div>
+      <div class="field">
+        <label for="klas">Klas</label>
+        <input id="klas" name="klas" required>
+      </div>
+    </div>
+    <p id="startError" class="form-error" hidden></p>
+    <div><button class="btn primary" type="submit" id="startBtn">Start de oefening</button></div>
+  </form>
+</section>
+
+<!-- Werkblad -->
+<div id="work" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <h1>Documentenstroom</h1>
+      <small id="who"></small>
+    </div>
+    <div class="spacer"></div>
+    <div class="status">
+      <span>Gelegd: <b id="placedCount">0/32</b></span>
+      <div class="progress" aria-hidden="true"><span id="progressBar" style="width:0%"></span></div>
+      <span>Controle: <b id="attemptCount">0</b></span>
+    </div>
+    <button class="btn ghost small" type="button" id="handInBtn" hidden>Inleveren</button>
+    <button class="btn primary" type="button" id="checkBtn" disabled>Controleer</button>
+  </header>
+
+  <main class="workspace" id="workspace">
+    <section class="board" aria-label="Documentenstroom">
+      <div id="feedback" class="feedback" hidden></div>
+      <details class="help" id="help" open>
+        <summary>Hoe werkt het?</summary>
+        <ol>
+          <li><b>Volgorde:</b> sleep een document (of de greep ⠿) naar een andere plaats. Of klik op ⠿ en daarna op de plaats waar het moet komen. De pijltjes werken ook.</li>
+          <li><b>Kaartjes:</b> sleep een kaartje uit de stapel naar een vak. Of klik op een kaartje en daarna op een vak (of eerst het vak, dan het kaartje).</li>
+          <li>Klik op een document om het groot te bekijken. Met × leg je een kaartje terug op de stapel.</li>
+          <li>Kaartjes horen bij hun document: verplaats je een document, dan gaan de kaartjes mee.</li>
+        </ol>
+      </details>
+      <ol class="stream" id="stream"></ol>
+    </section>
+
+    <aside class="pool" id="pool" data-drop="pool" aria-label="Stapel kaartjes">
+      <div class="pool-head">
+        <div class="pool-head-row">
+          <h2>Kaartjes</h2>
+          <button type="button" class="btn small ghost pool-toggle" id="poolToggle" aria-expanded="true">Verbergen</button>
+        </div>
+        <div class="tabs" role="tablist" id="tabs"></div>
+        <p class="pool-hint" id="poolHint">Kies een kaartje en leg het bij een document.</p>
+      </div>
+      <div class="pool-list" id="poolList" role="tabpanel"></div>
+    </aside>
+  </main>
+</div>
+
+<!-- Eindscherm -->
+<section id="result" class="screen" hidden>
+  <div class="result-wrap" id="resultWrap"></div>
+</section>
+
+<!-- Vergroot document -->
+<div class="modal" id="docModal" hidden>
+  <div class="modal-inner" role="dialog" aria-modal="true" aria-labelledby="docModalTitle">
+    <div class="modal-bar">
+      <strong id="docModalTitle">Document</strong>
+      <button class="btn small" type="button" id="docModalClose">Sluiten</button>
+    </div>
+    <div class="modal-body" id="docModalBody"></div>
+  </div>
+</div>
+
+<!-- Bevestiging -->
+<div class="modal" id="confirmModal" hidden>
+  <div class="modal-inner" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="confirm-body">
+      <h2 id="confirmTitle">Bevestigen</h2>
+      <p id="confirmText"></p>
+      <div class="confirm-actions">
+        <button class="btn" type="button" id="confirmNo">Annuleren</button>
+        <button class="btn primary" type="button" id="confirmYes">Ja</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
