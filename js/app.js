@@ -34,7 +34,7 @@
     if (!old || !old.attempts || !old.attempts.length || old.done) return;
     try {
       const list = JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]');
-      list.push({ naam: old.naam, klas: old.klas, n: old.attempts.length, start: old.start });
+      list.push({ naam: old.naam, n: old.attempts.length, start: old.start });
       localStorage.setItem(ARCHIVE_KEY, JSON.stringify(list.slice(-50)));
     } catch (e) { /* negeren */ }
   }
@@ -55,7 +55,7 @@
     return a;
   }
 
-  function newSession(naam, klas) {
+  function newSession(naam) {
     let order;
     do { order = shuffle(IDS); } while (order.filter((id, i) => IDS[i] === id).length > 1);
     const attach = {};
@@ -63,7 +63,7 @@
     const pool = {};
     TYPES.forEach(t => { pool[t.id] = shuffle(IDS); });
     return {
-      naam, klas, start: Date.now(), end: null, done: false, handedIn: false,
+      naam, start: Date.now(), end: null, done: false, handedIn: false,
       restarts: restartsFor(naam),
       order, attach, pool, attempts: [], marks: null
     };
@@ -88,11 +88,11 @@
   function placeCard(cardDoc, type, targetDoc) {
     const from = whereIs(cardDoc, type);
     if (from === targetDoc) return;
-    const existing = S.attach[targetDoc][type];
     if (from) {
-      S.attach[from][type] = existing || null;   // wisselen als het vak bezet was
+      S.attach[from][type] = null;
       clearCardMark(from, type);
     }
+    // Een kaartje dat al in het vak lag, gaat terug naar de stapel
     S.attach[targetDoc][type] = cardDoc;
     clearCardMark(targetDoc, type);
     commit();
@@ -234,7 +234,10 @@
     tabs.innerHTML = '';
     TYPES.forEach(t => {
       const left = S.pool[t.id].filter(c => !whereIs(c, t.id)).length;
-      const b = el('button', `tab t-${t.id}`, `<span>${t.short}</span><span class="count">${left} over</span>`);
+      // Groen kader: bij de laatste controle lagen alle kaartjes van deze soort juist
+      const allOk = !!S.marks && IDS.every(id => S.marks.card[id] && S.marks.card[id][t.id] === true);
+      const b = el('button', `tab t-${t.id}${allOk ? ' all-ok' : ''}`,
+        `<span>${t.short}</span><span class="count">${allOk ? '✓ alles juist' : `${left} over`}</span>`);
       b.type = 'button';
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(tab === t.id));
@@ -263,7 +266,7 @@
 
   function renderStatus() {
     const n = placedCount();
-    $('who').textContent = `${S.naam} · ${S.klas}`;
+    $('who').textContent = S.naam;
     $('placedCount').textContent = `${n}/${CARD_COUNT}`;
     $('progressBar').style.width = `${(n / CARD_COUNT) * 100}%`;
     $('attemptCount').textContent = String(S.attempts.length);
@@ -299,9 +302,8 @@
     const old = load();
     if (old && !old.done) {
       $('resumeBox').hidden = false;
-      $('resumeText').textContent = `${old.naam} (${old.klas}) was al bezig: ${old.attempts.length} controle(s).`;
+      $('resumeText').textContent = `${old.naam} was al bezig: ${old.attempts.length} controle(s).`;
       $('naam').value = old.naam;
-      $('klas').value = old.klas;
     } else {
       $('resumeBox').hidden = true;
     }
@@ -382,37 +384,50 @@
 
   function showResult() {
     const session = {
-      naam: S.naam, klas: S.klas, start: S.start, end: S.end, done: S.done && !S.handedIn,
+      naam: S.naam, klas: '', start: S.start, end: S.end, done: S.done && !S.handedIn,
       attempts: S.attempts, restarts: S.restarts || 0
     };
     const code = window.DS.encodeResult(session);
     const an = window.DS.analyse(session);
-    const wrap = $('resultWrap');
+    const v = window.DS.verdict(an);
     const allOk = !S.handedIn;
-    wrap.innerHTML = `
+    const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $('resultWrap').innerHTML = `
       <div class="result-head">
         <h1>${allOk ? 'Alles juist, goed gedaan!' : 'Ingeleverd'}</h1>
-        <p>${S.naam} · ${S.klas}</p>
+        <p>${esc(S.naam)} · ${new Date(S.end).toLocaleString('nl-BE', { dateStyle: 'short', timeStyle: 'short' })}</p>
         <div class="kpis">
           <div class="kpi"><b>${an.n}</b><span>controle${an.n === 1 ? '' : 's'}</span></div>
           <div class="kpi"><b>${an.first}/${TOTAL}</b><span>juist bij 1e controle</span></div>
           <div class="kpi"><b>${an.last}/${TOTAL}</b><span>juist op het einde</span></div>
           <div class="kpi"><b>${fmtTime(S.end - S.start)}</b><span>gewerkt</span></div>
         </div>
-      </div>
-      <div class="code-box">
-        <h2>Bezorg deze code aan je leerkracht</h2>
-        <p>Kopieer de code en plak ze waar je leerkracht vraagt (bv. in een opdracht of bericht). Of download ze als bestand.</p>
-        <textarea id="codeText" readonly aria-label="Resultaatcode">${code}</textarea>
-        <div class="code-actions">
-          <button class="btn primary" type="button" id="copyBtn">Kopieer code</button>
-          <button class="btn" type="button" id="dlBtn">Download als bestand</button>
-          <span class="copied" id="copiedMsg" hidden>Gekopieerd</span>
-        </div>
+        <p>Laat dit scherm open staan. Je leerkracht komt je resultaat bekijken.</p>
       </div>
       <h2>Jouw overzicht</h2>
       ${matrixHtml(an)}
-      <div><button class="btn ghost" type="button" id="newBtn">Nieuwe leerling starten</button></div>`;
+      <details class="help teacher-box">
+        <summary>Voor de leerkracht</summary>
+        <div class="kpis">
+          <div class="kpi"><b><span class="pill ${v.level}">${v.label}</span></b><span>inschatting</span></div>
+          <div class="kpi"><b>${an.flips}</b><span>keer juist → fout</span></div>
+          <div class="kpi"><b>${S.restarts || 0}</b><span>keer herbegonnen</span></div>
+        </div>
+        <div class="attempts">${an.evals.map((e, i) => `
+          <div class="attempt">
+            <h3>Controle ${i + 1} · ${e.ev.score}/${TOTAL} · ${new Date(S.attempts[i].t).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })}</h3>
+            ${e.errors.length ? `<ul>${e.errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p>Geen fouten.</p>'}
+          </div>`).join('')}
+        </div>
+        <p class="muted">Resultaatcode (voor leerkracht.html):</p>
+        <textarea id="codeText" readonly aria-label="Resultaatcode">${code}</textarea>
+        <div class="code-actions">
+          <button class="btn small" type="button" id="copyBtn">Kopieer code</button>
+          <span class="copied" id="copiedMsg" hidden>Gekopieerd</span>
+          <span class="spacer"></span>
+          <button class="btn small ghost" type="button" id="newBtn">Nieuwe leerling starten</button>
+        </div>
+      </details>`;
     $('copyBtn').onclick = () => {
       const ta = $('codeText');
       const done = () => { $('copiedMsg').hidden = false; };
@@ -420,24 +435,14 @@
         navigator.clipboard.writeText(code).then(done, () => { ta.select(); document.execCommand('copy'); done(); });
       } else { ta.select(); document.execCommand('copy'); done(); }
     };
-    $('dlBtn').onclick = () => {
-      const blob = new Blob([code], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `documentenstroom_${S.klas}_${S.naam}`.replace(/[^\w\-]+/g, '_') + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-    };
     $('newBtn').onclick = () => confirmBox(
       'Nieuwe leerling?',
-      'Heb je je code bezorgd aan je leerkracht? Na deze stap is jouw resultaat weg op deze computer.',
+      'Het resultaat van deze leerling wordt van deze computer gewist.',
       'Ja, nieuwe leerling',
       () => {
         try { localStorage.removeItem(KEY); } catch (e) { /* negeren */ }
         S = null;
         $('naam').value = '';
-        $('klas').value = '';
         showStart();
       });
     show('result');
@@ -672,9 +677,8 @@
     $('startForm').addEventListener('submit', e => {
       e.preventDefault();
       const naam = $('naam').value.trim();
-      const klas = $('klas').value.trim();
-      if (!naam || !klas) {
-        $('startError').textContent = 'Vul je naam en je klas in.';
+      if (!naam) {
+        $('startError').textContent = 'Vul je voor- en achternaam in.';
         $('startError').hidden = false;
         return;
       }
@@ -682,7 +686,7 @@
       const old = load();
       const go = () => {
         archive(old);
-        S = newSession(naam, klas);
+        S = newSession(naam);
         tab = 'naam';
         save();
         startWork();

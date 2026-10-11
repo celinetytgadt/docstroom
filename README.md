@@ -13,10 +13,10 @@ Slepen en klikken werken allebei (ook op touchscreens). Bij **Controleer** kleur
 
 | Pagina | Voor wie | Wat |
 | --- | --- | --- |
-| `index.html` | leerlingen | de oefening; op het einde krijgt de leerling een **resultaatcode** (kopiëren of downloaden als .txt) |
-| `leerkracht.html` | leerkracht | codes of .txt-bestanden inlezen → klasoverzicht, details per leerling, fouten per controle, wat de klas kent, CSV-export |
+| `index.html` | leerlingen | de oefening; het eindscherm toont het overzicht en (onder *Voor de leerkracht*) de fouten per controle en een resultaatcode |
+| `leerkracht.html` | leerkracht | resultaatcodes inlezen → klasoverzicht, details per leerling, fouten per controle, wat de klas kent, CSV-export |
 
-Er is geen server of account nodig: alles draait in de browser. De voortgang van de leerling wordt lokaal bewaard (herladen = niet alles kwijt).
+Er is geen server of account nodig: alles draait in de browser. De voortgang wordt bewaard in de browser van het toestel (localStorage): verder werken kan later op **hetzelfde toestel in dezelfde browser**, niet in een privévenster of op een ander toestel.
 
 ## Hoe zie je of een leerling gokte?
 

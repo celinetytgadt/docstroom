@@ -58,21 +58,21 @@
       const an = DS.analyse(s);
       return { code, s, an, v: DS.verdict(an) };
     });
-    // Per leerling (naam+klas) enkel de laatste inzending tonen als er dubbels zijn
+    // Per leerling (naam) enkel de laatste inzending tonen als er dubbels zijn
     const byKey = new Map();
     rows.forEach(r => {
-      const k = (r.s.klas + '|' + r.s.naam).toLowerCase();
+      const k = (r.s.naam || '').toLowerCase();
       const prev = byKey.get(k);
       if (!prev || (r.s.start || 0) > (prev.s.start || 0)) byKey.set(k, r);
     });
     rows = [...byKey.values()].map(r => {
       r.dups = codes.filter(c => {
         const s = DS.decodeResult(c);
-        return (s.klas + '|' + s.naam).toLowerCase() === (r.s.klas + '|' + r.s.naam).toLowerCase();
+        return (s.naam || '').toLowerCase() === (r.s.naam || '').toLowerCase();
       }).length - 1;
       return r;
     });
-    rows.sort((a, b) => (a.s.klas || '').localeCompare(b.s.klas || '') || (a.s.naam || '').localeCompare(b.s.naam || ''));
+    rows.sort((a, b) => (a.s.naam || '').localeCompare(b.s.naam || ''));
     renderOverview();
     renderClass();
     if (active !== null && !rows[active]) active = null;
@@ -84,7 +84,7 @@
     $('overviewPanel').hidden = !rows.length;
     if (!rows.length) return;
     $('overview').innerHTML = `
-      <thead><tr><th>Leerling</th><th>Klas</th><th class="c">Controles</th><th class="c">1e controle</th><th class="c">Einde</th><th>Status</th><th>Inschatting</th><th>Tijd</th><th>Opmerking</th></tr></thead>
+      <thead><tr><th>Leerling</th><th class="c">Controles</th><th class="c">1e controle</th><th class="c">Einde</th><th>Status</th><th>Inschatting</th><th>Tijd</th><th>Opmerking</th></tr></thead>
       <tbody>${rows.map((r, i) => {
         const notes = [];
         if (!r.s.intact) notes.push('<span class="warnflag">⚠ code gewijzigd</span>');
@@ -92,7 +92,7 @@
         if (r.dups) notes.push(`${r.dups} oudere inzending${r.dups > 1 ? 'en' : ''}`);
         if (r.an.flips) notes.push(`${r.an.flips}× juist → fout`);
         return `<tr class="clickable${active === i ? ' active' : ''}" data-i="${i}" tabindex="0">
-          <td><b>${esc(r.s.naam)}</b></td><td>${esc(r.s.klas)}</td>
+          <td><b>${esc(r.s.naam)}</b></td>
           <td class="c">${r.an.n}</td>
           <td class="c">${r.an.first}/${TOTAL}</td>
           <td class="c">${r.an.last}/${TOTAL}</td>
@@ -118,7 +118,7 @@
     p.hidden = false;
     p.innerHTML = `
       <div class="detail-head">
-        <h2>${esc(r.s.naam)} · ${esc(r.s.klas)}</h2>
+        <h2>${esc(r.s.naam)}</h2>
         <span class="muted">Gestart ${fmtDate(r.s.start)} · klaar ${fmtDate(r.s.end)} · ${fmtDur(r.s)}</span>
       </div>
       <div class="kpis">
@@ -158,12 +158,12 @@
   }
 
   function csv() {
-    const head = ['Naam', 'Klas', 'Controles', 'Juist 1e controle', 'Juist einde', 'Totaal', 'Status', 'Inschatting', 'Juist→fout', 'Herbegonnen', 'Code intact', 'Start', 'Einde']
+    const head = ['Naam', 'Controles', 'Juist 1e controle', 'Juist einde', 'Totaal', 'Status', 'Inschatting', 'Juist→fout', 'Herbegonnen', 'Code intact', 'Start', 'Einde']
       .concat(IDS.flatMap(id => COLS.map(c => `${NAME[id]} – ${c.label}`)));
     const lines = [head];
     rows.forEach(r => {
       lines.push([
-        r.s.naam, r.s.klas, r.an.n, r.an.first, r.an.last, TOTAL, r.s.done ? 'Alles juist' : 'Ingeleverd', r.v.label,
+        r.s.naam, r.an.n, r.an.first, r.an.last, TOTAL, r.s.done ? 'Alles juist' : 'Ingeleverd', r.v.label,
         r.an.flips, r.s.restarts || 0, r.s.intact ? 'ja' : 'NEE', fmtDate(r.s.start), fmtDate(r.s.end)
       ].concat(IDS.flatMap(id => COLS.map(c => {
         const x = r.an.items[id][c.id];
