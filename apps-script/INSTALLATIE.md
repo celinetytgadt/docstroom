@@ -1,11 +1,13 @@
 # Koppeling met Google Sheets installeren (± 10 minuten)
 
-Je doet dit één keer. Daarna bewaart de app het werk van elke leerling in je spreadsheet, en zie je alles live op `leerkracht.html`.
+Je doet dit één keer. Daarna bewaart de app het werk van elke leerling in je spreadsheet, en bekijk je de resultaten op `leerkracht.html`.
+
+**Toestemmingen zo beperkt mogelijk:** het script mag alleen de spreadsheet lezen en bewerken waarin het geïnstalleerd is. Het krijgt geen toegang tot je Drive, andere bestanden, Gmail of agenda. Daarvoor is het belangrijk dat je het script opent **vanuit de spreadsheet** (stap 1) en de manifest-instelling van stap 1b doet.
 
 ## 1. Script in de spreadsheet plakken
 
 1. Open je spreadsheet (ID `1PkZ4NKyxBWeD8m1bkfgak4CjhwiVlT7T5etCzDhR6qA`).
-2. Menu **Extensies → Apps Script**.
+2. Menu **Extensies → Apps Script**. (Niet via script.google.com een los project maken: dan werkt de beperking tot deze ene sheet niet.)
 3. Wis alles in `Code.gs` en plak de volledige inhoud van [`Code.gs`](Code.gs) uit deze map.
 4. Pas bovenaan het wachtwoord aan:
    ```js
@@ -14,10 +16,21 @@ Je doet dit één keer. Daarna bewaart de app het werk van elke leerling in je s
    Kies iets dat leerlingen niet raden. Dit wachtwoord typ je later op de leerkrachtpagina.
 5. Klik op 💾 **Opslaan**.
 
+## 1b. Toestemmingen vastleggen (manifest)
+
+1. Klik links op ⚙️ **Projectinstellingen**.
+2. Vink **Manifestbestand "appsscript.json" in editor weergeven** aan.
+3. Ga terug naar de **Editor** (`< >` links). Open `appsscript.json`.
+4. Wis alles en plak de inhoud van [`appsscript.json`](appsscript.json) uit deze map. Sla op.
+
+Daarin staat dat het script maar één toestemming mag vragen: `spreadsheets.currentonly` (alleen deze spreadsheet).
+
 ## 2. Eén keer uitvoeren (toestemming geven)
 
 1. Kies bovenaan in de lijst met functies **installeer** en klik op **▶ Uitvoeren**.
-2. Google vraagt toestemming: **Toestemmingen controleren** → kies je account → (eventueel *Geavanceerd → Ga naar … (onveilig)*) → **Toestaan**.
+2. Google vraagt toestemming: **Toestemmingen controleren** → kies je account → (eventueel *Geavanceerd → Ga naar … (onveilig)*). Kijk na dat er maar **één** toestemming gevraagd wordt, ongeveer: *“Spreadsheets bekijken en bewerken waarin deze app is geïnstalleerd”*. Vraagt Google meer (bv. “al je spreadsheets” of “Google Drive”), stop dan en kijk stap 1 en 1b na. Klik op **Toestaan**.
+
+   “Onveilig” betekent alleen dat Google het script niet zelf gecontroleerd heeft; het is je eigen script.
 3. In je spreadsheet verschijnt een tabblad **Resultaten** met kolomkoppen.
 
 ## 3. Publiceren als web-app

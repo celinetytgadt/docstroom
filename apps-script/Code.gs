@@ -1,5 +1,11 @@
 /**
+ * @OnlyCurrentDoc
+ *
  * Documentenstroom – opslag in Google Sheets
+ *
+ * Toestemmingen: het script kan ALLEEN de spreadsheet lezen en bewerken waarin het
+ * geïnstalleerd is (scope spreadsheets.currentonly). Geen toegang tot Drive,
+ * andere bestanden, Gmail of je account.
  *
  * Installatie: zie apps-script/INSTALLATIE.md
  * 1. Pas hieronder LEERKRACHT_WACHTWOORD aan.
@@ -7,7 +13,6 @@
  *    (Uitvoeren als: ikzelf · Wie heeft toegang: iedereen).
  */
 
-const SHEET_ID = '1PkZ4NKyxBWeD8m1bkfgak4CjhwiVlT7T5etCzDhR6qA';
 const LEERKRACHT_WACHTWOORD = 'verander-mij';
 
 const TAB = 'Resultaten';
@@ -120,7 +125,7 @@ function remove(b) {
 /* ---------- hulpfuncties ---------- */
 
 function sheet() {
-  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(TAB);
   if (!sh) {
     sh = ss.insertSheet(TAB);
