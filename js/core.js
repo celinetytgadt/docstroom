@@ -18,20 +18,22 @@
   function evaluate(order, attach) {
     const pos = {};
     const card = {};
+    const byType = { pos: 0 };
+    TYPES.forEach(t => { byType[t.id] = 0; });
     let score = 0;
     order.forEach((id, i) => {
       pos[id] = IDS[i] === id;
-      if (pos[id]) score++;
+      if (pos[id]) { score++; byType.pos++; }
     });
     IDS.forEach(id => {
       card[id] = {};
       TYPES.forEach(t => {
         const ok = attach[id] && attach[id][t.id] === id;
         card[id][t.id] = !!ok;
-        if (ok) score++;
+        if (ok) { score++; byType[t.id]++; }
       });
     });
-    return { pos, card, score, total: TOTAL };
+    return { pos, card, byType, score, total: TOTAL };
   }
 
   function describeErrors(order, attach) {
@@ -180,9 +182,31 @@
     return { label: 'Twijfelt', level: 'warn' };
   }
 
+  /* ---------- verbetering per controle ---------- */
+
+  // Tabel: per controle het aantal juiste antwoorden per soort kaartje (en volgorde),
+  // met het verschil tegenover de vorige controle.
+  function progressHtml(an) {
+    if (!an.n) return '';
+    const cols = [{ id: 'pos', label: 'Volgorde' }].concat(TYPES.map(t => ({ id: t.id, label: t.label })));
+    const per = DOCS.length;
+    const lvl = (v, max) => v === max ? 'good' : v >= 0.75 * max ? 'ok' : v >= 0.5 * max ? 'warn' : 'bad';
+    const diff = d => d ? `<small class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : '−'}${Math.abs(d)}</small>` : '';
+    return `<div class="matrix-wrap"><table class="matrix rounds">
+      <thead><tr><th>Controle</th>${cols.map(c => `<th class="c">${c.label}</th>`).join('')}<th class="c">Totaal</th></tr></thead>
+      <tbody>${an.evals.map((e, i) => {
+        const prev = i ? an.evals[i - 1].ev : null;
+        return `<tr><td>${i + 1}</td>${cols.map(c => {
+          const v = e.ev.byType[c.id];
+          return `<td class="c"><span class="pill ${lvl(v, per)}">${v}/${per}</span>${prev ? diff(v - prev.byType[c.id]) : ''}</td>`;
+        }).join('')}<td class="c"><b>${e.ev.score}/${TOTAL}</b>${prev ? diff(e.ev.score - prev.score) : ''}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }
+
   window.DS = {
     DOCS, TYPES, IDS, NAME, TYPE_LABEL, TOTAL,
     evaluate, describeErrors, packAttempt, unpackAttempt,
-    encodeResult, decodeResult, analyse, verdict
+    encodeResult, decodeResult, analyse, verdict, progressHtml
   };
 })();

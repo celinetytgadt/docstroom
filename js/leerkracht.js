@@ -149,6 +149,9 @@
       </table></div>
       <div class="legend"><span>Getal = vanaf welke controle het juist bleef:</span>
         <span class="pill good">1</span> meteen <span class="pill warn">2</span> <span class="pill bad">3+</span> <span class="pill bad">✗</span> nooit juist · ↺ = was al eens juist en werd daarna weer fout</div>
+      <h3>Verbetering per controle</h3>
+      <p class="muted">Aantal juiste antwoorden per soort kaartje bij elke controle (+/− = verschil met de vorige controle).</p>
+      ${an.n ? DS.progressHtml(an) : '<p>Nog geen controle gedaan.</p>'}
       <h3>Fouten per controle</h3>
       <div class="attempts">${an.evals.map((e, i) => `
         <div class="attempt">
