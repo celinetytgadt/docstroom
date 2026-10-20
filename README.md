@@ -16,7 +16,7 @@ Op het eindscherm staat een knop naar de taak in Google Classroom, zodat de leer
 | Pagina | Voor wie | Wat |
 | --- | --- | --- |
 | `index.html` | leerlingen | de oefening; het eindscherm toont het overzicht en (onder *Voor de leerkracht*) de fouten per controle en een resultaatcode |
-| `leerkracht.html` | leerkracht | live resultaten uit de Google Sheet (of codes handmatig inlezen) → klasoverzicht, details per leerling, fouten per controle, wat de klas kent, CSV-export |
+| `leerkracht.html` | leerkracht | live resultaten uit de Google Sheet (of codes handmatig inlezen) → klasoverzicht, details per leerling, verbetering per controle (aantal juist per soort kaartje), fouten per controle, wat de klas kent, CSV-export (ook juist per soort kaartje bij 1e en laatste controle) |
 
 ### Opslag
 

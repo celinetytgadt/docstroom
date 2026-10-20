@@ -484,6 +484,8 @@
           <div class="kpi"><b>${an.flips}</b><span>keer juist → fout</span></div>
           <div class="kpi"><b>${S.restarts || 0}</b><span>keer herbegonnen</span></div>
         </div>
+        <p class="muted">Juiste antwoorden per soort kaartje bij elke controle:</p>
+        ${window.DS.progressHtml(an)}
         <div class="attempts">${an.evals.map((e, i) => `
           <div class="attempt">
             <h3>Controle ${i + 1} · ${e.ev.score}/${TOTAL} · ${new Date(S.attempts[i].t).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })}</h3>

@@ -323,6 +323,9 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: .88rem; }
 .pill.warn { background: var(--warn-bg); color: var(--warn); }
 .pill.bad { background: var(--bad-bg); color: var(--bad); }
 .pill.none { background: var(--surface-2); color: var(--ink-2); }
+.matrix.rounds small { margin-left: 6px; font-weight: 700; font-size: .76rem; font-variant-numeric: tabular-nums; }
+.matrix.rounds small.up { color: var(--ok); }
+.matrix.rounds small.down { color: var(--bad); }
 .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: .82rem; color: var(--ink-2); align-items: center; }
 
 /* ---------- toast ---------- */

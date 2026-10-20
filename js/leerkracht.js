@@ -149,6 +149,9 @@
       </table></div>
       <div class="legend"><span>Getal = vanaf welke controle het juist bleef:</span>
         <span class="pill good">1</span> meteen <span class="pill warn">2</span> <span class="pill bad">3+</span> <span class="pill bad">✗</span> nooit juist · ↺ = was al eens juist en werd daarna weer fout</div>
+      <h3>Verbetering per controle</h3>
+      <p class="muted">Aantal juiste antwoorden per soort kaartje bij elke controle (+/− = verschil met de vorige controle).</p>
+      ${an.n ? DS.progressHtml(an) : '<p>Nog geen controle gedaan.</p>'}
       <h3>Fouten per controle</h3>
       <div class="attempts">${an.evals.map((e, i) => `
         <div class="attempt">
@@ -222,13 +225,17 @@
 
   function csv() {
     const head = ['Naam', 'Controles', 'Juist 1e controle', 'Juist einde', 'Totaal', 'Status', 'Inschatting', 'Juist→fout', 'Herbegonnen', 'Code intact', 'Start', 'Einde']
+      .concat(COLS.flatMap(c => [`${c.label} juist 1e controle`, `${c.label} juist einde`]))
       .concat(IDS.flatMap(id => COLS.map(c => `${NAME[id]} – ${c.label}`)));
     const lines = [head];
     rows.forEach(r => {
       lines.push([
         r.s.naam, r.an.n, r.an.first, r.an.last, TOTAL, status(r), r.v.label,
         r.an.flips, r.s.restarts || 0, r.s.intact ? 'ja' : 'NEE', fmtDate(r.s.start), fmtDate(r.s.end)
-      ].concat(IDS.flatMap(id => COLS.map(c => {
+      ].concat(COLS.flatMap(c => r.an.n
+        ? [r.an.evals[0].ev.byType[c.id], r.an.evals[r.an.n - 1].ev.byType[c.id]]
+        : ['', '']
+      )).concat(IDS.flatMap(id => COLS.map(c => {
         const x = r.an.items[id][c.id];
         return x.solvedAt === null ? 'nooit' : x.solvedAt;
       }))));
