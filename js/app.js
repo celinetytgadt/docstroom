@@ -103,8 +103,15 @@
       try { if (navigator.sendBeacon(URL_, JSON.stringify(payload()))) pending = false; } catch (e) { /* negeren */ }
     }
   });
+  // Een toestand van de herkansing mag nooit in de basisversie geladen worden. (De herkansing
+  // heeft een eigen opslagsleutel en een eigen rij in de sheet; oudere herkansingen hebben nog geen mode.)
+  function fits(state) {
+    return !!state && (HERK || state.mode !== 'herkansing');
+  }
   function load() {
-    try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; }
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { s = null; }
+    return fits(s) ? s : null;
   }
   function archive(old) {
     if (!old || !old.attempts || !old.attempts.length || old.done) return;
@@ -139,7 +146,7 @@
     const pool = {};
     TYPES.forEach(t => { pool[t.id] = shuffle(IDS); });
     return {
-      naam, start: Date.now(), end: null, done: false, handedIn: false,
+      naam, mode: HERK ? 'herkansing' : null, start: Date.now(), end: null, done: false, handedIn: false,
       restarts: restartsFor(naam),
       order, attach, pool, attempts: [], marks: null
     };
@@ -815,6 +822,7 @@
       const begin = state => {
         if (old && !sameName) archive(old);
         S = state || newSession(naam);
+        if (HERK) S.mode = 'herkansing';
         if (ONLINE) S.pin = pin;
         tab = 'naam';
         save();
@@ -839,7 +847,7 @@
         btn.disabled = false;
         btn.textContent = 'Start de oefening';
         if (!res || !res.ok) return err((res && res.error) || 'Er ging iets mis. Probeer opnieuw.');
-        if (res.status === 'resume' && res.state) {
+        if (res.status === 'resume' && fits(res.state)) {
           // Nieuwste versie nemen: die van de sheet of die op deze computer
           const local = sameName && old.pin === pin ? old : null;
           const useLocal = local && (local.updated || 0) > (res.state.updated || 0);
