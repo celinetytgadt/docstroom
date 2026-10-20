@@ -59,7 +59,15 @@ Of bezorg de URL aan Claude, dan wordt dat voor je gedaan.
 
 ## Wat staat er in de sheet?
 
-Eén rij per leerling: naam, pincode, status (bezig / alles juist / ingeleverd), aantal controles, score bij de 1e controle en op het einde, inschatting, enz. Pas de kolom **Toestand** niet aan: daarmee kan de leerling verder werken.
+**Tabblad Resultaten:** één rij per leerling (en een aparte rij “Naam (herkansing)” voor de herkansing). Je ziet naam, pincode, status (bezig / alles juist / ingeleverd), aantal controles, score bij de 1e controle en op het einde, inschatting, enz. Pas de kolom **Toestand** niet aan: daarmee kan de leerling verder werken.
+
+**Tabblad Controles:** de historiek. Er komt een rij bij elke keer dat een leerling op **Controleer** klikt, in de basisversie én in de herkansing. Elke rij bevat:
+- naam en versie (basis of herkansing);
+- de hoeveelste controle het is, en het tijdstip;
+- het totaal aantal juist (op 40);
+- het aantal juist per onderdeel (op 8): volgorde, naam, wat is het?, van wie? voor wie? en wat is de inhoud?
+
+Filter op een naam om de historiek van één leerling te zien. Wis je een leerling met *Leerling wissen*, dan blijft de historiek staan met versie “basis (gewist)”.
 
 - **Leerling vergat de pincode?** Je ziet de pincode in de sheet en op de leerkrachtpagina.
 - **Leerling moet opnieuw beginnen?** Klik op de leerkrachtpagina op *Leerling wissen*, of verwijder de rij in de sheet.
@@ -67,3 +75,11 @@ Eén rij per leerling: naam, pincode, status (bezig / alles juist / ingeleverd),
 ## Script later aanpassen
 
 Pas je het script aan, gebruik dan **Implementeren → Implementaties beheren → ✏️ → Versie: Nieuwe versie → Implementeren**. Zo blijft de URL dezelfde.
+
+### Bijwerken naar de versie met historiek (tabblad Controles)
+
+1. Open de spreadsheet → **Extensies → Apps Script**.
+2. Kopieer je wachtwoord uit de regel `const LEERKRACHT_WACHTWOORD = '…';`.
+3. Wis alles in `Code.gs` en plak de nieuwe [`Code.gs`](Code.gs). Zet je wachtwoord terug en klik op 💾 **Opslaan**.
+4. Kies de functie **historiekAanvullen** en klik op **▶ Uitvoeren**. Het tabblad **Controles** verschijnt, met daarin alle controles die al gebeurden. Je kan dit gerust opnieuw uitvoeren: er komt niets dubbel.
+5. **Implementeren → Implementaties beheren → ✏️ → Versie: Nieuwe versie → Implementeren.** De URL blijft dezelfde, dus je hoeft in de app niets aan te passen.
