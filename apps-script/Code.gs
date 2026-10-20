@@ -22,6 +22,13 @@ const HEADERS = [
 ];
 const COL = Object.fromEntries(HEADERS.map((h, i) => [h, i + 1]));
 
+// Historiek: één rij per keer dat een leerling op Controleer klikt (basis en herkansing)
+const HIST_TAB = 'Controles';
+const HIST_HEADERS = [
+  'Naam', 'Versie', 'Controle', 'Tijdstip', 'Juist', 'Op',
+  'Volgorde (op 8)', 'Naam (op 8)', 'Wat is het? (op 8)', 'Van wie? Voor wie? (op 8)', 'Wat is de inhoud? (op 8)'
+];
+
 function doPost(e) {
   let body;
   try {
@@ -93,6 +100,7 @@ function save(b) {
     s.start ? new Date(s.start) : new Date(), new Date(), s.code || '', JSON.stringify(b.state || null)
   ];
   sh.getRange(r, 1, 1, row.length).setValues([row]);
+  logHistory(naam, b.state);
   return { ok: true };
 }
 
@@ -117,9 +125,79 @@ function list(b) {
 function remove(b) {
   if (b.wachtwoord !== LEERKRACHT_WACHTWOORD) return { ok: false, error: 'Wachtwoord klopt niet.' };
   const sh = sheet();
-  const r = findRow(sh, clean(b.naam));
+  const naam = clean(b.naam);
+  const r = findRow(sh, naam);
   if (r) sh.deleteRow(r);
+  markHistoryDeleted(naam);
   return { ok: true };
+}
+
+/* ---------- historiek per controle ---------- */
+
+// Voegt de controles toe die nog niet in het tabblad Controles staan.
+function logHistory(naam, state) {
+  const attempts = (state && state.attempts) || [];
+  if (!attempts.length) return;
+  const sh = histSheet();
+  const done = loggedCount(sh, naam);
+  if (attempts.length <= done) return;
+  const versie = /\(herkansing\)$/i.test(naam) || state.mode === 'herkansing' ? 'herkansing' : 'basis';
+  const rows = attempts.slice(done).map((a, i) => {
+    const sc = scoreAttempt(a.p);
+    const per = [0, 1, 2, 3].map(t => sc.per[t] === undefined ? '' : sc.per[t]);
+    return [naam, versie, done + i + 1, a.t ? new Date(a.t) : new Date(), sc.total, sc.max, sc.pos].concat(per);
+  });
+  sh.getRange(sh.getLastRow() + 1, 1, rows.length, HIST_HEADERS.length).setValues(rows);
+}
+
+// Een poging is "volgorde:kaartjes". De volgorde van de documenten in de app is de oplossing:
+// op plaats i hoort document i, en bij document j horen de kaartjes van document j.
+function scoreAttempt(p) {
+  const parts = String(p || '').split(':');
+  const o = parts[0] || '';
+  const a = parts[1] || '';
+  const n = o.length;
+  const types = n ? Math.round(a.length / n) : 0;
+  let pos = 0;
+  for (let i = 0; i < n; i++) if (Number(o[i]) === i) pos++;
+  const per = [];
+  for (let t = 0; t < types; t++) {
+    let ok = 0;
+    for (let j = 0; j < n; j++) {
+      const ch = a[j * types + t];
+      if (ch !== undefined && ch !== '-' && Number(ch) === j) ok++;
+    }
+    per.push(ok);
+  }
+  return { pos, per, total: per.reduce((x, y) => x + y, pos), max: n * (1 + types) };
+}
+
+// Hoeveel controles van deze leerling staan er al (gewiste pogingen niet meegeteld)?
+function loggedCount(sh, naam) {
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return 0;
+  const key = naam.toLowerCase();
+  const vals = sh.getRange(2, 1, n, 3).getValues();
+  let max = 0;
+  vals.forEach(v => {
+    if (String(v[0]).trim().toLowerCase() === key && !/gewist/.test(String(v[1]))) max = Math.max(max, Number(v[2]) || 0);
+  });
+  return max;
+}
+
+// Bij "Leerling wissen" blijft de historiek staan, gemarkeerd als gewist.
+function markHistoryDeleted(naam) {
+  const sh = histSheet();
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return;
+  const key = naam.toLowerCase();
+  const vals = sh.getRange(2, 1, n, 2).getValues();
+  vals.forEach((v, i) => {
+    const versie = String(v[1]);
+    if (String(v[0]).trim().toLowerCase() === key && !/gewist/.test(versie)) {
+      sh.getRange(i + 2, 2).setValue(versie + ' (gewist)');
+    }
+  });
 }
 
 /* ---------- hulpfuncties ---------- */
@@ -137,6 +215,21 @@ function sheet() {
     sh.getRange('B:B').setNumberFormat('@');
     sh.setColumnWidth(COL['Resultaatcode'], 160);
     sh.setColumnWidth(COL['Toestand (niet aanpassen)'], 160);
+  }
+  return sh;
+}
+
+function histSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(HIST_TAB);
+  if (!sh) {
+    sh = ss.insertSheet(HIST_TAB);
+  }
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(HIST_HEADERS);
+    sh.getRange(1, 1, 1, HIST_HEADERS.length).setFontWeight('bold').setBackground('#e8eef9');
+    sh.setFrozenRows(1);
+    sh.getRange('D:D').setNumberFormat('dd/mm/yyyy hh:mm');
   }
   return sh;
 }
@@ -164,7 +257,23 @@ function json(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-// Eenmalig uitvoeren vanuit de editor om toestemming te geven en het tabblad aan te maken.
+// Eenmalig uitvoeren vanuit de editor om toestemming te geven en de tabbladen aan te maken.
 function installeer() {
   sheet();
+  histSheet();
+}
+
+// Eenmalig uitvoeren vanuit de editor: zet de controles die vóór deze versie gebeurden
+// ook in het tabblad Controles. Opnieuw uitvoeren kan geen kwaad (er komt niets dubbel).
+function historiekAanvullen() {
+  const sh = sheet();
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return;
+  const vals = sh.getRange(2, 1, n, HEADERS.length).getValues();
+  vals.forEach(v => {
+    const naam = String(v[COL['Naam'] - 1]).trim();
+    const text = v[COL['Toestand (niet aanpassen)'] - 1];
+    if (!naam || !text) return;
+    try { logHistory(naam, JSON.parse(text)); } catch (e) { /* rij overslaan */ }
+  });
 }
