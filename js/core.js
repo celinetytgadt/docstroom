@@ -115,6 +115,7 @@
       e: session.end || null,
       d: session.done ? 1 : 0,
       r: session.restarts || 0,
+      m: session.mode || undefined,
       a: session.attempts.map(x => [x.t, x.p])
     };
     const json = JSON.stringify(payload);
@@ -138,6 +139,7 @@
       end: p.e,
       done: !!p.d,
       restarts: p.r || 0,
+      mode: p.m || null,
       attempts: (p.a || []).map(([t, s]) => ({ t, p: s })),
       intact: hash(SALT + json) === body.slice(dot + 1)
     };

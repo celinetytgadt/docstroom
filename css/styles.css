@@ -134,6 +134,11 @@ a.btn { text-decoration: none; }
 .feedback.good { background: var(--ok-bg); border-color: var(--ok); }
 .feedback.bad { background: var(--bad-bg); border-color: var(--bad); }
 .feedback p { margin: 0; }
+.type-score { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.type-score li { display: flex; gap: 8px; align-items: baseline; padding: 4px 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: .9rem; }
+.type-score li b { font-variant-numeric: tabular-nums; }
+.type-score li.ok { border-color: var(--ok); color: var(--ok); }
+.feedback .type-score, .feedback .type-score ~ p { flex-basis: 100%; }
 
 .help { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 16px; }
 .help summary { cursor: pointer; font-weight: 700; }

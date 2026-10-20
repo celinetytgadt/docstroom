@@ -64,8 +64,11 @@
       try { s = code ? DS.decodeResult(code) : null; } catch (e) { s = null; }
       if (!s) s = { naam: meta ? meta.naam : '?', attempts: [], start: null, end: null, done: false, intact: true, restarts: 0 };
       if (meta) s.naam = meta.naam;
+      // Een herkansing krijgt een eigen rij (in de sheet staat de naam al met dit achtervoegsel)
+      const herk = s.mode === 'herkansing' || /\(herkansing\)$/i.test(s.naam || '');
+      if (herk && !/\(herkansing\)$/i.test(s.naam || '')) s.naam = `${s.naam} (herkansing)`;
       const an = DS.analyse(s);
-      return { code, s, an, v: DS.verdict(an), meta };
+      return { code, s, an, v: DS.verdict(an), meta, herk };
     });
     // Per leerling één rij: de sheet gaat voor, anders de nieuwste inzending
     const byKey = new Map();
@@ -212,8 +215,10 @@
   function renderClass() {
     $('classPanel').hidden = !rows.length;
     if (!rows.length) return;
-    const n = rows.filter(r => r.an.n).length || 1;
-    const pct = (id, key) => Math.round(100 * rows.filter(r => r.an.n && r.an.items[id][key].first).length / n);
+    // Enkel de eerste oefening, zonder herkansingen
+    const base = rows.filter(r => !r.herk);
+    const n = base.filter(r => r.an.n).length || 1;
+    const pct = (id, key) => Math.round(100 * base.filter(r => r.an.n && r.an.items[id][key].first).length / n);
     const lvl = v => v >= 80 ? 'good' : v >= 60 ? 'ok' : v >= 40 ? 'warn' : 'bad';
     $('classTable').innerHTML = `
       <thead><tr><th>Document</th>${COLS.map(c => `<th class="c">${c.label}</th>`).join('')}</tr></thead>

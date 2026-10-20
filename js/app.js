@@ -6,8 +6,14 @@
   const DOC = Object.fromEntries(DOCS.map(d => [d.id, d]));
   const TYPE = Object.fromEntries(TYPES.map(t => [t.id, t]));
   const ZONE_TYPES = TYPES.filter(t => t.id !== 'naam');
-  const KEY = 'ds-session-v1';
-  const ARCHIVE_KEY = 'ds-archive-v1';
+  // Herkansing (herkansing.html): max. controles, enkel aantallen per soort kaartje als feedback
+  const MODE = window.DS_MODE || {};
+  const HERK = !!MODE.herkansing;
+  const MAX = HERK ? (MODE.maxChecks || 3) : 0;
+  const KEY = HERK ? 'ds-herkansing-v1' : 'ds-session-v1';
+  const ARCHIVE_KEY = HERK ? 'ds-herkansing-archive-v1' : 'ds-archive-v1';
+  // In de Google Sheet krijgt een herkansing een eigen rij
+  const sheetName = naam => HERK ? `${naam} (herkansing)` : naam;
   const CARD_COUNT = DOCS.length * TYPES.length;
 
   const $ = id => document.getElementById(id);
@@ -34,7 +40,7 @@
   /* ---------- online opslag (Google Sheet via Apps Script) ---------- */
   const URL_ = (window.DS_CONFIG && window.DS_CONFIG.scriptUrl || '').trim();
   const ONLINE = !!URL_;
-  const CLASSROOM = (window.DS_CONFIG && window.DS_CONFIG.classroomUrl || '').trim();
+  const CLASSROOM = (window.DS_CONFIG && window.DS_CONFIG[HERK ? 'herkansingClassroomUrl' : 'classroomUrl'] || '').trim();
   let pending = false;
   let syncing = false;
   let syncTimer = null;
@@ -43,8 +49,14 @@
     return fetch(URL_, { method: 'POST', body: JSON.stringify(body), redirect: 'follow' })
       .then(r => r.json());
   }
+  function sessionData() {
+    return {
+      naam: S.naam, klas: '', start: S.start, end: S.end, done: S.done && !S.handedIn,
+      attempts: S.attempts, restarts: S.restarts || 0, mode: HERK ? 'herkansing' : undefined
+    };
+  }
   function summary() {
-    const sess = { naam: S.naam, klas: '', start: S.start, end: S.end, done: S.done && !S.handedIn, attempts: S.attempts, restarts: S.restarts || 0 };
+    const sess = sessionData();
     const an = window.DS.analyse(sess);
     return {
       status: S.done ? (S.handedIn ? 'ingeleverd' : 'alles juist') : 'bezig',
@@ -54,7 +66,7 @@
     };
   }
   function payload() {
-    return { action: 'save', naam: S.naam, pin: S.pin, state: S, summary: summary() };
+    return { action: 'save', naam: sheetName(S.naam), pin: S.pin, state: S, summary: summary() };
   }
   function setSync(kind, text) {
     const e = $('syncStatus');
@@ -333,7 +345,7 @@
     $('who').textContent = S.naam;
     $('placedCount').textContent = `${n}/${CARD_COUNT}`;
     $('progressBar').style.width = `${(n / CARD_COUNT) * 100}%`;
-    $('attemptCount').textContent = String(S.attempts.length);
+    $('attemptCount').textContent = HERK ? `${S.attempts.length}/${MAX}` : String(S.attempts.length);
     const btn = $('checkBtn');
     btn.disabled = n < CARD_COUNT;
     btn.title = n < CARD_COUNT ? `Nog ${CARD_COUNT - n} kaartjes leggen` : '';
@@ -377,7 +389,9 @@
   function startWork() {
     show('work');
     $('help').open = S.attempts.length === 0;
-    if (S.attempts.length && S.marks) {
+    if (HERK && S.attempts.length) {
+      showFeedback('bad', `<p>Je bent terug. Je deed al ${S.attempts.length} van de ${MAX} controles.</p>${typeFeedback(S.attempts[S.attempts.length - 1])}`);
+    } else if (S.attempts.length && S.marks) {
       showFeedback('bad', `<p>Je bent terug. Laatste controle: poging ${S.attempts.length}. Verbeter de rode onderdelen.</p>`);
     } else {
       $('feedback').hidden = true;
@@ -386,11 +400,43 @@
   }
 
   /* ---------- controleren ---------- */
+  // Herkansing: enkel hoeveel juist per soort kaartje, niet welke
+  function typeFeedback(attempt) {
+    const { order, attach } = window.DS.unpackAttempt(attempt.p);
+    const ev = window.DS.evaluate(order, attach);
+    const cols = [{ id: 'pos', label: 'Volgorde' }].concat(TYPES.map(t => ({ id: t.id, label: t.label })));
+    return `<ul class="type-score">${cols.map(c => {
+      const v = ev.byType[c.id];
+      return `<li class="${v === DOCS.length ? 'ok' : ''}"><span>${c.label}</span><b>${v}/${DOCS.length}</b></li>`;
+    }).join('')}</ul>`;
+  }
+
   function check() {
     if (placedCount() < CARD_COUNT) return;
+    if (!HERK) { runCheck(); return; }
+    const left = MAX - S.attempts.length - 1;
+    confirmBox(
+      `Controle ${S.attempts.length + 1} van ${MAX}?`,
+      left
+        ? `Je ziet daarna hoeveel kaartjes van elke soort juist liggen, maar niet welke. Daarna heb je nog ${left} controle${left > 1 ? 's' : ''}.`
+        : 'Dit is je laatste controle. Daarna wordt je herkansing ingeleverd.',
+      'Ja, controleer',
+      runCheck);
+  }
+
+  function runCheck() {
     const ev = window.DS.evaluate(S.order, S.attach);
     S.attempts.push({ t: Date.now(), p: window.DS.packAttempt(S.order, S.attach) });
-    S.marks = { pos: ev.pos, card: JSON.parse(JSON.stringify(ev.card)) };
+    S.marks = HERK ? null : { pos: ev.pos, card: JSON.parse(JSON.stringify(ev.card)) };
+    if (HERK && ev.score < TOTAL && S.attempts.length >= MAX) {
+      S.done = true;
+      S.handedIn = true;
+      S.end = Date.now();
+      save();
+      syncNow();
+      showResult();
+      return;
+    }
     if (ev.score === TOTAL) {
       S.done = true;
       S.end = Date.now();
@@ -401,6 +447,16 @@
     }
     save();
     syncNow();
+    if (HERK) {
+      const left = MAX - S.attempts.length;
+      showFeedback('bad', `
+        <p><b>${ev.score} van ${TOTAL} juist</b> bij controle ${S.attempts.length} van ${MAX}. Zo veel liggen er juist per soort:</p>
+        ${typeFeedback(S.attempts[S.attempts.length - 1])}
+        <p>Zoek zelf welke fout liggen: kijk opnieuw naar de documenten. Je hebt nog ${left} controle${left > 1 ? 's' : ''}.</p>`);
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const posWrong = IDS.filter(id => !ev.pos[id]).length;
     const cardWrong = TOTAL - DOCS.length - (ev.score - (DOCS.length - posWrong));
     showFeedback('bad', `
@@ -450,10 +506,7 @@
   }
 
   function showResult() {
-    const session = {
-      naam: S.naam, klas: '', start: S.start, end: S.end, done: S.done && !S.handedIn,
-      attempts: S.attempts, restarts: S.restarts || 0
-    };
+    const session = sessionData();
     const code = window.DS.encodeResult(session);
     const an = window.DS.analyse(session);
     const v = window.DS.verdict(an);
@@ -461,7 +514,7 @@
     const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     $('resultWrap').innerHTML = `
       <div class="result-head">
-        <h1>${allOk ? 'Alles juist, goed gedaan!' : 'Ingeleverd'}</h1>
+        <h1>${allOk ? 'Alles juist, goed gedaan!' : HERK ? 'Herkansing ingeleverd' : 'Ingeleverd'}</h1>
         <p>${esc(S.naam)} · ${new Date(S.end).toLocaleString('nl-BE', { dateStyle: 'short', timeStyle: 'short' })}</p>
         <div class="kpis">
           <div class="kpi"><b>${an.n}</b><span>controle${an.n === 1 ? '' : 's'}</span></div>
@@ -475,8 +528,10 @@
         <p>Je resultaat is bewaard. Ga nu naar de taak in Google Classroom en klik op <b>Markeren als voltooid</b>. Pas dan weet je leerkracht dat je klaar bent.</p>
         <div><a class="btn primary" href="${esc(CLASSROOM)}" target="_blank" rel="noopener">Open de taak in Classroom</a></div>
       </div>` : ''}
-      <h2>Jouw overzicht</h2>
-      ${matrixHtml(an)}
+      ${HERK ? `<h2>Jouw resultaat per controle</h2>
+      ${window.DS.progressHtml(an)}
+      <p class="muted">Je leerkracht bekijkt je herkansing en bespreekt ze met jou.</p>` : `<h2>Jouw overzicht</h2>
+      ${matrixHtml(an)}`}
       <details class="help teacher-box">
         <summary>Voor de leerkracht</summary>
         <div class="kpis">
@@ -484,14 +539,14 @@
           <div class="kpi"><b>${an.flips}</b><span>keer juist → fout</span></div>
           <div class="kpi"><b>${S.restarts || 0}</b><span>keer herbegonnen</span></div>
         </div>
-        <p class="muted">Juiste antwoorden per soort kaartje bij elke controle:</p>
+        ${HERK ? '' : `<p class="muted">Juiste antwoorden per soort kaartje bij elke controle:</p>
         ${window.DS.progressHtml(an)}
         <div class="attempts">${an.evals.map((e, i) => `
           <div class="attempt">
             <h3>Controle ${i + 1} · ${e.ev.score}/${TOTAL} · ${new Date(S.attempts[i].t).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' })}</h3>
             ${e.errors.length ? `<ul>${e.errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p>Geen fouten.</p>'}
           </div>`).join('')}
-        </div>
+        </div>`}
         <p class="muted">Resultaatcode (voor leerkracht.html):</p>
         <textarea id="codeText" readonly aria-label="Resultaatcode">${code}</textarea>
         <div class="code-actions">
@@ -780,7 +835,7 @@
       const btn = $('startBtn');
       btn.disabled = true;
       btn.textContent = 'Even geduld…';
-      api({ action: 'start', naam, pin }).then(res => {
+      api({ action: 'start', naam: sheetName(naam), pin }).then(res => {
         btn.disabled = false;
         btn.textContent = 'Start de oefening';
         if (!res || !res.ok) return err((res && res.error) || 'Er ging iets mis. Probeer opnieuw.');
