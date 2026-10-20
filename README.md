@@ -17,6 +17,7 @@ Op het eindscherm staat een knop naar de taak in Google Classroom, zodat de leer
 | --- | --- | --- |
 | `index.html` | leerlingen | de oefening; het eindscherm toont het overzicht en (onder *Voor de leerkracht*) de fouten per controle en een resultaatcode |
 | `leerkracht.html` | leerkracht | live resultaten uit de Google Sheet (of codes handmatig inlezen) → klasoverzicht, details per leerling, verbetering per controle (aantal juist per soort kaartje), fouten per controle, wat de klas kent, CSV-export (ook juist per soort kaartje bij 1e en laatste controle) |
+| `herkansing.html` | leerlingen die gokten | herkansing met een **andere bestelling** (40 fietshelmen, Trapkracht ↔ Velomondo) en anders geformuleerde kaartjes; max. 3 controles; feedback alleen *hoeveel* juist per soort kaartje, niet *welke*; geen oplossing op het eindscherm |
 
 ### Opslag
 
@@ -24,6 +25,10 @@ Op het eindscherm staat een knop naar de taak in Google Classroom, zodat de leer
 - **Zonder Google Sheet** (`scriptUrl` in `js/config.js` leeg): alles blijft in de browser van het toestel. Verder werken kan dan alleen op hetzelfde toestel in dezelfde browser.
 
 Een naam kan maar één keer gebruikt worden (met de pincode die de leerling eerst koos). Zo kan een leerling niet stiekem herbeginnen of het werk van een ander openen. Laten herbeginnen kan via *Leerling wissen* op de leerkrachtpagina.
+
+### Herkansing
+
+Geef leerlingen die gokten de link `…/docstroom/herkansing.html`. Ze starten met hun naam en een pincode. In de sheet en op `leerkracht.html` verschijnt de herkansing als een aparte rij “Naam (herkansing)”, net onder de eerste poging. Je hoeft het Apps Script niet aan te passen. Herkansingen tellen niet mee in *Wat kent de klas?*. Een Classroom-taak voor de herkansing stel je in met `herkansingClassroomUrl` in `js/config.js`. De documenten en kaartjes van de herkansing staan in `js/data-herkansing.js`.
 
 ## Hoe zie je of een leerling gokte?
 
