@@ -225,13 +225,17 @@
 
   function csv() {
     const head = ['Naam', 'Controles', 'Juist 1e controle', 'Juist einde', 'Totaal', 'Status', 'Inschatting', 'Juist→fout', 'Herbegonnen', 'Code intact', 'Start', 'Einde']
+      .concat(COLS.flatMap(c => [`${c.label} juist 1e controle`, `${c.label} juist einde`]))
       .concat(IDS.flatMap(id => COLS.map(c => `${NAME[id]} – ${c.label}`)));
     const lines = [head];
     rows.forEach(r => {
       lines.push([
         r.s.naam, r.an.n, r.an.first, r.an.last, TOTAL, status(r), r.v.label,
         r.an.flips, r.s.restarts || 0, r.s.intact ? 'ja' : 'NEE', fmtDate(r.s.start), fmtDate(r.s.end)
-      ].concat(IDS.flatMap(id => COLS.map(c => {
+      ].concat(COLS.flatMap(c => r.an.n
+        ? [r.an.evals[0].ev.byType[c.id], r.an.evals[r.an.n - 1].ev.byType[c.id]]
+        : ['', '']
+      )).concat(IDS.flatMap(id => COLS.map(c => {
         const x = r.an.items[id][c.id];
         return x.solvedAt === null ? 'nooit' : x.solvedAt;
       }))));
