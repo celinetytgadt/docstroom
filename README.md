@@ -48,3 +48,7 @@ Repository → *Settings* → *Pages* → *Deploy from a branch* → kies de bra
 ## Inhoud aanpassen
 
 Alle documenten en kaartjes staan in `js/data.js`. De volgorde van `DOCS` is de oplossing.
+
+## Na een wijziging in `js/` of `css/`
+
+De pagina's laden de scripts en de stijl met een versienummer (`?v=…`), zodat browsers geen oude versie uit hun cache gebruiken. Verhoog dat nummer in `index.html`, `herkansing.html` en `leerkracht.html` bij elke wijziging aan een script of de stijl.
